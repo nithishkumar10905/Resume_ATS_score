@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Resume-Job Matching System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background: #f0f0f0;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .tab.active {
+            background: #1a73e8;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .section-scores {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .section-score-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #1a73e8;
+        }
+        .experience-info {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .ats-compliance {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .recommendations {
+            margin-top: 20px;
+        }
+        .recommendation-card {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        .skill-priority {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        .mandatory {
+            background: #ff4444;
+            color: white;
+        }
+        .optional {
+            background: #ffa500;
+            color: white;
+        }
+        .explanation {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .report-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .report-btn {
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .report-btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Enhanced Resume-Job Matching System</h1>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('single')">Single Analysis</button>
+            <button class="tab" onclick="switchTab('batch')">Batch Analysis</button>
+        </div>
+        
+        <!-- Single Analysis Tab -->
+        <div id="single-tab" class="tab-content active">
+            <div class="input-section">
+                <form id="upload-form" enctype="multipart/form-data">
+                    <div class="input-group">
+                        <label for="resume-file">Upload Resume (PDF/Word):</label>
+                        <input type="file" id="resume-file" name="resume_file" accept=".pdf,.doc,.docx">
+                        <div class="or-divider">OR</div>
+                        <textarea id="resume" name="resume_text" placeholder="Paste your resume content here..."></textarea>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="job-description">Job Description:</label>
+                        <textarea id="job-description" name="job_description" placeholder="Paste the job description here..."></textarea>
+                    </div>
+                    
+                    <button type="button" id="analyze-btn" onclick="analyzeMatch()">🔍 Analyze Match</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Batch Analysis Tab -->
+        <div id="batch-tab" class="tab-content">
+            <div class="input-section">
+                <div class="input-group">
+                    <label>Analysis Mode:</label>
+                    <select id="batch-mode">
+                        <option value="multi_job">One Resume vs Multiple Jobs</option>
+                        <option value="multi_resume">Multiple Resumes vs One Job</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label for="batch-resume">Resume(s) - One per line:</label>
+                    <textarea id="batch-resume" placeholder="Paste resume(s) here..."></textarea>
+                </div>
+                
+                <div class="input-group">
+                    <label for="batch-jobs">Job Description(s) - One per line:</label>
+                    <textarea id="batch-jobs" placeholder="Paste job description(s) here..."></textarea>
+                </div>
+                
+                <button type="button" onclick="batchAnalyze()">🔍 Batch Analyze</button>
+            </div>
+        </div>
+        
+        <div id="loading" class="loading hidden">⏳ Analyzing...</div>
+        
+        <div id="results" class="results hidden">
+            <h2>📊 Analysis Results</h2>
+            
+            <div class="match-score">
+                <span>Overall Match Score: </span>
+                <span id="match-percentage" class="percentage"></span>
+            </div>
+            
+            <div id="explanation" class="explanation hidden">
+                <h3>📝 Score Explanation</h3>
+                <div id="explanation-content"></div>
+            </div>
+            
+            <div id="section-scores" class="section-scores hidden">
+                <h3>Section-wise Scores</h3>
+                <div id="section-scores-content"></div>
+            </div>
+            
+            <div id="experience-match" class="experience-info hidden">
+                <h3>👔 Experience Analysis</h3>
+                <div id="experience-content"></div>
+            </div>
+            
+            <div id="ats-compliance" class="ats-compliance hidden">
+                <h3>✅ ATS Compliance Score</h3>
+                <div id="ats-content"></div>
+            </div>
+            
+            <div class="skills-section">
+                <div class="matched-skills">
+                    <h3>✅ Matched Skills</h3>
+                    <div id="matched-skills-list" class="skills-list"></div>
+                </div>
+                
+                <div class="missing-skills">
+                    <h3>❌ Missing Skills</h3>
+                    <div id="missing-skills-list" class="skills-list"></div>
+                </div>
+            </div>
+            
+            <div id="recommendations" class="recommendations hidden">
+                <h3>💡 Skill Development Recommendations</h3>
+                <div id="recommendations-content"></div>
+            </div>
+            
+            <div class="report-buttons">
+                <button class="report-btn" onclick="downloadReport('pdf')">📄 Download PDF Report</button>
+                <button class="report-btn" onclick="downloadReport('json')">📋 Download JSON Report</button>
+            </div>
+        </div>
+        
+        <div id="batch-results" class="results hidden">
+            <h2>📊 Batch Analysis Results</h2>
+            <div id="batch-results-content"></div>
+        </div>
+        
+        <div id="error" class="error hidden"></div>
+    </div>
+
+    <script>
+        let currentResults = null;
+        
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            if (tab === 'single') {
+                document.querySelector('.tab:nth-child(1)').classList.add('active');
+                document.getElementById('single-tab').classList.add('active');
+            } else {
+                document.querySelector('.tab:nth-child(2)').classList.add('active');
+                document.getElementById('batch-tab').classList.add('active');
+            }
+            
+            hideResults();
+            hideError();
+        }
+        
+        async function analyzeMatch() {
+            const form = document.getElementById('upload-form');
+            const formData = new FormData(form);
+            const resumeFile = document.getElementById('resume-file').files[0];
+            const resumeText = document.getElementById('resume').value.trim();
+            const jobDescription = document.getElementById('job-description').value.trim();
+            
+            if (!resumeFile && !resumeText) {
+                showError('Please upload a resume file or paste resume text');
+                return;
+            }
+            
+            if (!jobDescription) {
+                showError('Please fill in the job description');
+                return;
+            }
+            
+            showLoading(true);
+            hideResults();
+            hideError();
+            
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentResults = data;
+                    displayResults(data);
+                } else {
+                    showError(data.error || 'An error occurred');
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function batchAnalyze() {
+            const mode = document.getElementById('batch-mode').value;
+            const resumeText = document.getElementById('batch-resume').value.trim();
+            const jobsText = document.getElementById('batch-jobs').value.trim();
+            
+            if (!resumeText || !jobsText) {
+                showError('Please provide both resume(s) and job description(s)');
+                return;
+            }
+            
+            showLoading(true);
+            hideResults();
+            hideError();
+            
+            const payload = {
+                mode: mode,
+                resume: resumeText,
+                resumes: mode === 'multi_resume' ? resumeText.split('\n\n') : [resumeText],
+                job_description: jobsText,
+                job_descriptions: mode === 'multi_job' ? jobsText.split('\n\n') : [jobsText]
+            };
+            
+            try {
+                const response = await fetch('/batch-analyze', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayBatchResults(data);
+                } else {
+                    showError(data.error || 'An error occurred');
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        function displayResults(data) {
+            document.getElementById('match-percentage').textContent = data.match_percentage + '%';
+            
+            // Explanation
+            if (data.explanation) {
+                const expDiv = document.getElementById('explanation');
+                const expContent = document.getElementById('explanation-content');
+                expContent.innerHTML = `
+                    <p><strong>Semantic Score:</strong> ${data.explanation.semantic_score}%</p>
+                    <p><strong>Skills Match:</strong> ${data.explanation.skills_match}</p>
+                    <p><strong>Experience Impact:</strong> ${data.explanation.experience_impact}</p>
+                `;
+                expDiv.classList.remove('hidden');
+            }
+            
+            // Section scores
+            if (data.section_scores && Object.keys(data.section_scores).length > 0) {
+                const secDiv = document.getElementById('section-scores');
+                const secContent = document.getElementById('section-scores-content');
+                secContent.innerHTML = Object.entries(data.section_scores)
+                    .map(([section, score]) => `
+                        <div class="section-score-card">
+                            <strong>${section.charAt(0).toUpperCase() + section.slice(1)}</strong>
+                            <div style="font-size: 24px; color: #1a73e8;">${score}%</div>
+                        </div>
+                    `).join('');
+                secDiv.classList.remove('hidden');
+            }
+            
+            // Experience match
+            if (data.experience_match) {
+                const expDiv = document.getElementById('experience-match');
+                const expContent = document.getElementById('experience-content');
+                const exp = data.experience_match;
+                expContent.innerHTML = `
+                    <p><strong>Your Experience:</strong> ${exp.resume_years} years (${exp.resume_level})</p>
+                    <p><strong>Required:</strong> ${exp.required_years} years (${exp.required_level})</p>
+                    <p><strong>Match:</strong> ${exp.match ? '✅ Yes' : '❌ No'}</p>
+                `;
+                expDiv.classList.remove('hidden');
+            }
+            
+            // ATS Compliance
+            if (data.ats_compliance) {
+                const atsDiv = document.getElementById('ats-compliance');
+                const atsContent = document.getElementById('ats-content');
+                const ats = data.ats_compliance;
+                let issuesHtml = '';
+                if (ats.issues && ats.issues.length > 0) {
+                    issuesHtml = '<ul>' + ats.issues.map(issue => `<li>${issue}</li>`).join('') + '</ul>';
+                }
+                atsContent.innerHTML = `
+                    <p><strong>Score:</strong> ${ats.score}/100</p>
+                    ${issuesHtml}
+                `;
+                atsDiv.classList.remove('hidden');
+            }
+            
+            // Matched skills
+            const matchedSkillsList = document.getElementById('matched-skills-list');
+            matchedSkillsList.innerHTML = data.matched_skills.length > 0 
+                ? data.matched_skills.map(skill => `<span class="skill matched">${skill}</span>`).join('')
+                : '<span class="no-skills">No matched skills found</span>';
+            
+            // Missing skills
+            const missingSkillsList = document.getElementById('missing-skills-list');
+            if (data.missing_skills.mandatory || data.missing_skills.optional) {
+                let html = '';
+                if (data.missing_skills.mandatory.length > 0) {
+                    html += data.missing_skills.mandatory.map(skill => 
+                        `<span class="skill missing">${skill}<span class="skill-priority mandatory">MANDATORY</span></span>`
+                    ).join('');
+                }
+                if (data.missing_skills.optional.length > 0) {
+                    html += data.missing_skills.optional.map(skill => 
+                        `<span class="skill missing">${skill}<span class="skill-priority optional">OPTIONAL</span></span>`
+                    ).join('');
+                }
+                missingSkillsList.innerHTML = html || '<span class="no-skills">No missing skills</span>';
+            }
+            
+            // Recommendations
+            if (data.recommendations && Object.keys(data.recommendations).length > 0) {
+                const recDiv = document.getElementById('recommendations');
+                const recContent = document.getElementById('recommendations-content');
+                recContent.innerHTML = Object.entries(data.recommendations).slice(0, 3).map(([skill, rec]) => `
+                    <div class="recommendation-card">
+                        <h4>${skill}</h4>
+                        <p><strong>Courses:</strong> ${rec.courses.join(', ')}</p>
+                        <p><strong>Projects:</strong> ${rec.projects.join(', ')}</p>
+                        <p><strong>Certifications:</strong> ${rec.certifications.join(', ')}</p>
+                    </div>
+                `).join('');
+                recDiv.classList.remove('hidden');
+            }
+            
+            document.getElementById('results').classList.remove('hidden');
+        }
+        
+        function displayBatchResults(data) {
+            const resultsDiv = document.getElementById('batch-results');
+            const content = document.getElementById('batch-results-content');
+            
+            let html = `<p><strong>Total ${data.mode === 'multi_resume' ? 'Resumes' : 'Jobs'}:</strong> ${data.mode === 'multi_resume' ? data.total_resumes : data.total_jobs}</p>`;
+            html += '<div class="section-scores">';
+            
+            data.results.forEach((result, idx) => {
+                html += `
+                    <div class="section-score-card">
+                        <strong>${data.mode === 'multi_resume' ? 'Resume' : 'Job'} #${idx + 1}</strong>
+                        <div style="font-size: 24px; color: #1a73e8;">${result.match_percentage}%</div>
+                        <p>Matched Skills: ${result.matched_skills.length}</p>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            content.innerHTML = html;
+            resultsDiv.classList.remove('hidden');
+        }
+        
+        async function downloadReport(format) {
+            if (!currentResults) {
+                showError('No results to download');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/generate-report/${format}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(currentResults)
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `match_report.${format}`;
+                    a.click();
+                } else {
+                    showError('Error generating report');
+                }
+            } catch (error) {
+                showError('Error downloading report');
+            }
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('hidden', !show);
+            const btn = document.getElementById('analyze-btn');
+            if (btn) btn.disabled = show;
+        }
+        
+        function hideResults() {
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('batch-results').classList.add('hidden');
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+        
+        function hideError() {
+            document.getElementById('error').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

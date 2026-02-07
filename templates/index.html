@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS Resume Matcher - AI Powered</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 ATS Resume Matcher</h1>
+            <p class="subtitle">AI-Powered Resume Analysis & Job Matching</p>
+        </div>
+        
+        <div class="input-section">
+            <form id="upload-form" enctype="multipart/form-data">
+                <div class="input-card">
+                    <div class="card-header">
+                        <span class="icon">📄</span>
+                        <h3>Your Resume</h3>
+                    </div>
+                    
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="resume-file" name="resume_file" accept=".pdf,.doc,.docx" style="display: none;">
+                        <button type="button" class="upload-btn" onclick="document.getElementById('resume-file').click()">
+                            📎 Choose File
+                        </button>
+                        <span id="file-name" class="file-name">No file chosen</span>
+                        <button type="button" id="remove-file-btn" class="remove-btn hidden" onclick="removeFile()">
+                            ✕ Remove
+                        </button>
+                    </div>
+                    
+                    <div class="divider">
+                        <span>OR</span>
+                    </div>
+                    
+                    <textarea id="resume" name="resume_text" placeholder="Paste your resume content here...&#10;&#10;Include:&#10;• Work Experience&#10;• Skills&#10;• Education&#10;• Projects"></textarea>
+                </div>
+                
+                <div class="input-card">
+                    <div class="card-header">
+                        <span class="icon">💼</span>
+                        <h3>Job Description</h3>
+                    </div>
+                    <textarea id="job-description" name="job_description" placeholder="Paste the job description here...&#10;&#10;Include:&#10;• Required Skills&#10;• Experience Level&#10;• Qualifications&#10;• Responsibilities"></textarea>
+                </div>
+                
+                <button type="button" id="analyze-btn" class="analyze-btn" onclick="analyzeMatch()">
+                    <span class="btn-text">🔍 Analyze Match</span>
+                    <span class="btn-loader hidden">⏳ Analyzing...</span>
+                </button>
+            </form>
+        </div>
+        
+        <div id="results" class="results hidden">
+            <h2>📊 Analysis Results</h2>
+            
+            <!-- Speedometer Gauge -->
+            <div class="gauge-container">
+                <div class="gauge-title">ATS Match Score</div>
+                <div class="speedometer">
+                    <svg viewBox="0 0 200 200" class="gauge-svg">
+                        <defs>
+                            <linearGradient id="redGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:#ff4444;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#ff6b6b;stop-opacity:1" />
+                            </linearGradient>
+                            <linearGradient id="yellowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:#ffa500;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#ffc107;stop-opacity:1" />
+                            </linearGradient>
+                            <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:#28a745;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#5cb85c;stop-opacity:1" />
+                            </linearGradient>
+                            <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:#007bff;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#0056b3;stop-opacity:1" />
+                            </linearGradient>
+                            <filter id="shadow">
+                                <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+                            </filter>
+                        </defs>
+                        
+                        <!-- Outer circle -->
+                        <circle cx="100" cy="100" r="90" fill="none" stroke="#f0f0f0" stroke-width="18"/>
+                        
+                        <!-- Colored arcs -->
+                        <circle cx="100" cy="100" r="90" fill="none" stroke="url(#redGrad)" stroke-width="18"
+                                stroke-dasharray="56.5 282.7" stroke-dashoffset="0" transform="rotate(135 100 100)" stroke-linecap="round"/>
+                        <circle cx="100" cy="100" r="90" fill="none" stroke="url(#yellowGrad)" stroke-width="18"
+                                stroke-dasharray="56.5 282.7" stroke-dashoffset="-56.5" transform="rotate(135 100 100)" stroke-linecap="round"/>
+                        <circle cx="100" cy="100" r="90" fill="none" stroke="url(#greenGrad)" stroke-width="18"
+                                stroke-dasharray="56.5 282.7" stroke-dashoffset="-113" transform="rotate(135 100 100)" stroke-linecap="round"/>
+                        <circle cx="100" cy="100" r="90" fill="none" stroke="url(#blueGrad)" stroke-width="18"
+                                stroke-dasharray="56.5 282.7" stroke-dashoffset="-169.5" transform="rotate(135 100 100)" stroke-linecap="round"/>
+                        
+                        <!-- Scale marks -->
+                        <g id="scale-marks">
+                            <line x1="100" y1="20" x2="100" y2="30" stroke="#999" stroke-width="2" transform="rotate(135 100 100)"/>
+                            <line x1="100" y1="20" x2="100" y2="30" stroke="#999" stroke-width="2" transform="rotate(180 100 100)"/>
+                            <line x1="100" y1="20" x2="100" y2="30" stroke="#999" stroke-width="2" transform="rotate(225 100 100)"/>
+                            <line x1="100" y1="20" x2="100" y2="30" stroke="#999" stroke-width="2" transform="rotate(270 100 100)"/>
+                            <line x1="100" y1="20" x2="100" y2="30" stroke="#999" stroke-width="2" transform="rotate(315 100 100)"/>
+                            <line x1="100" y1="20" x2="100" y2="30" stroke="#999" stroke-width="2" transform="rotate(360 100 100)"/>
+                            <line x1="100" y1="20" x2="100" y2="30" stroke="#999" stroke-width="2" transform="rotate(405 100 100)"/>
+                        </g>
+                        
+                        <!-- Scale numbers -->
+                        <text x="30" y="110" font-size="14" fill="#666" font-weight="bold">0</text>
+                        <text x="45" y="50" font-size="14" fill="#666" font-weight="bold">25</text>
+                        <text x="95" y="25" font-size="14" fill="#666" font-weight="bold">50</text>
+                        <text x="145" y="50" font-size="14" fill="#666" font-weight="bold">75</text>
+                        <text x="160" y="110" font-size="14" fill="#666" font-weight="bold">100</text>
+                        
+                        <!-- Needle -->
+                        <g id="needle-group" transform="rotate(135 100 100)">
+                            <polygon points="100,100 98,40 100,35 102,40" fill="#333" filter="url(#shadow)"/>
+                            <circle cx="100" cy="100" r="12" fill="#333"/>
+                            <circle cx="100" cy="100" r="8" fill="#fff"/>
+                            <circle cx="100" cy="100" r="4" fill="#333"/>
+                        </g>
+                    </svg>
+                    
+                    <div class="gauge-center">
+                        <div class="gauge-value">
+                            <span id="match-percentage" class="percentage-value">0</span>
+                            <span class="percentage-symbol">%</span>
+                        </div>
+                        <div class="gauge-label" id="gauge-label">Analyzing...</div>
+                    </div>
+                </div>
+                
+                <div class="gauge-legend">
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: linear-gradient(90deg, #ff4444, #ff6b6b);"></span>
+                        <span>0-40% Poor</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: linear-gradient(90deg, #ffa500, #ffc107);"></span>
+                        <span>41-60% Fair</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: linear-gradient(90deg, #28a745, #5cb85c);"></span>
+                        <span>61-80% Good</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: linear-gradient(90deg, #007bff, #0056b3);"></span>
+                        <span>81-100% Excellent</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card stat-matched">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-value" id="matched-count">0</div>
+                    <div class="stat-label">Matched Skills</div>
+                </div>
+                <div class="stat-card stat-missing">
+                    <div class="stat-icon">❌</div>
+                    <div class="stat-value" id="missing-count">0</div>
+                    <div class="stat-label">Missing Skills</div>
+                </div>
+                <div class="stat-card stat-total">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-value" id="total-count">0</div>
+                    <div class="stat-label">Total Required</div>
+                </div>
+            </div>
+            
+            <!-- Skills Section -->
+            <div class="skills-section">
+                <div class="skills-card matched-card">
+                    <h3>✅ Matched Skills</h3>
+                    <div id="matched-skills-list" class="skills-list"></div>
+                </div>
+                
+                <div class="skills-card missing-card">
+                    <h3>❌ Missing Skills</h3>
+                    <div id="missing-skills-list" class="skills-list"></div>
+                </div>
+            </div>
+            
+            <!-- Recommendations -->
+            <div class="recommendations">
+                <h3>💡 Recommendations</h3>
+                <div id="recommendations-list"></div>
+            </div>
+        </div>
+        
+        <div id="error" class="error hidden"></div>
+    </div>
+
+    <script>
+        // File upload handling
+        document.getElementById('resume-file').addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name || 'No file chosen';
+            document.getElementById('file-name').textContent = fileName;
+            document.getElementById('remove-file-btn').classList.toggle('hidden', !e.target.files[0]);
+        });
+        
+        function removeFile() {
+            document.getElementById('resume-file').value = '';
+            document.getElementById('file-name').textContent = 'No file chosen';
+            document.getElementById('remove-file-btn').classList.add('hidden');
+        }
+        
+        async function analyzeMatch() {
+            const form = document.getElementById('upload-form');
+            const formData = new FormData(form);
+            const resumeFile = document.getElementById('resume-file').files[0];
+            const resumeText = document.getElementById('resume').value.trim();
+            const jobDescription = document.getElementById('job-description').value.trim();
+            
+            if (!resumeFile && !resumeText) {
+                showError('⚠️ Please upload a resume file or paste resume text');
+                return;
+            }
+            
+            if (!jobDescription) {
+                showError('⚠️ Please fill in the job description');
+                return;
+            }
+            
+            showLoading(true);
+            hideResults();
+            hideError();
+            
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayResults(data);
+                } else {
+                    showError(data.error || 'An error occurred');
+                }
+            } catch (error) {
+                showError('❌ Network error. Please try again.');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        function displayResults(data) {
+            const percentage = data.match_percentage;
+            
+            // Update gauge
+            updateGauge(percentage);
+            
+            // Update stats
+            document.getElementById('matched-count').textContent = data.matched_skills.length;
+            document.getElementById('missing-count').textContent = data.missing_skills.length;
+            document.getElementById('total-count').textContent = data.matched_skills.length + data.missing_skills.length;
+            
+            // Update skills lists
+            const matchedSkillsList = document.getElementById('matched-skills-list');
+            const missingSkillsList = document.getElementById('missing-skills-list');
+            
+            matchedSkillsList.innerHTML = data.matched_skills.length > 0 
+                ? data.matched_skills.map(skill => `<span class="skill matched">${skill}</span>`).join('')
+                : '<span class="no-skills">No matched skills found</span>';
+            
+            missingSkillsList.innerHTML = data.missing_skills.length > 0
+                ? data.missing_skills.map(skill => `<span class="skill missing">${skill}</span>`).join('')
+                : '<span class="no-skills">✨ Great! No missing skills</span>';
+            
+            // Generate recommendations
+            generateRecommendations(percentage, data.missing_skills);
+            
+            // Show results with animation
+            document.getElementById('results').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+        
+        function updateGauge(percentage) {
+            const needleGroup = document.getElementById('needle-group');
+            const percentageEl = document.getElementById('match-percentage');
+            const labelEl = document.getElementById('gauge-label');
+            
+            // Calculate needle angle (135 to 405 degrees for 0-100%)
+            const angle = 135 + (percentage * 2.7);
+            needleGroup.setAttribute('transform', `rotate(${angle} 100 100)`);
+            
+            // Animate percentage
+            animateValue(percentageEl, 0, percentage, 1500);
+            
+            // Update label and color
+            let label, color;
+            if (percentage <= 40) {
+                label = '😟 Poor Match';
+                color = '#ff4444';
+            } else if (percentage <= 60) {
+                label = '😐 Fair Match';
+                color = '#ffa500';
+            } else if (percentage <= 80) {
+                label = '😊 Good Match';
+                color = '#28a745';
+            } else {
+                label = '🎉 Excellent Match';
+                color = '#007bff';
+            }
+            
+            labelEl.textContent = label;
+            percentageEl.style.color = color;
+        }
+        
+        function animateValue(element, start, end, duration) {
+            const range = end - start;
+            const increment = range / (duration / 16);
+            let current = start;
+            
+            const timer = setInterval(() => {
+                current += increment;
+                if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+                    current = end;
+                    clearInterval(timer);
+                }
+                element.textContent = Math.round(current);
+            }, 16);
+        }
+        
+        function generateRecommendations(percentage, missingSkills) {
+            const recList = document.getElementById('recommendations-list');
+            let recommendations = [];
+            
+            if (percentage >= 80) {
+                recommendations.push('🎯 Excellent match! You\'re a strong candidate for this position.');
+                recommendations.push('📝 Tailor your resume to highlight the matched skills prominently.');
+            } else if (percentage >= 60) {
+                recommendations.push('👍 Good match! Focus on highlighting your relevant experience.');
+                if (missingSkills.length > 0) {
+                    recommendations.push(`📚 Consider learning: ${missingSkills.slice(0, 3).join(', ')}`);
+                }
+            } else if (percentage >= 40) {
+                recommendations.push('⚠️ Fair match. You may need to develop more relevant skills.');
+                if (missingSkills.length > 0) {
+                    recommendations.push(`🎓 Priority skills to learn: ${missingSkills.slice(0, 3).join(', ')}`);
+                }
+            } else {
+                recommendations.push('❌ Low match. This position may not be the best fit currently.');
+                recommendations.push('💪 Focus on building foundational skills for this role.');
+            }
+            
+            recList.innerHTML = recommendations.map(rec => `<div class="recommendation-item">${rec}</div>`).join('');
+        }
+        
+        function showLoading(show) {
+            const btn = document.getElementById('analyze-btn');
+            const btnText = btn.querySelector('.btn-text');
+            const btnLoader = btn.querySelector('.btn-loader');
+            
+            btn.disabled = show;
+            btnText.classList.toggle('hidden', show);
+            btnLoader.classList.toggle('hidden', !show);
+        }
+        
+        function hideResults() {
+            document.getElementById('results').classList.add('hidden');
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+            setTimeout(() => hideError(), 5000);
+        }
+        
+        function hideError() {
+            document.getElementById('error').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
