@@ -4,381 +4,482 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ATS Resume Matcher - AI Powered</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    <div class="bg-grid"></div>
+
     <div class="container">
+        <!-- Header -->
         <div class="header">
+            <div class="header-badge">AI-Powered</div>
             <h1>🎯 ATS Resume Matcher</h1>
-            <p class="subtitle">AI-Powered Resume Analysis & Job Matching</p>
+            <p class="subtitle">Semantic AI Analysis · Gemini Feedback · Score Breakdown</p>
         </div>
-        
-        <div class="input-section">
+
+        <!-- Navigation Tabs -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="showTab('analyze-tab', this)">🔍 Analyze</button>
+            <button class="tab-btn" onclick="showTab('history-tab', this)">📜 History</button>
+        </div>
+
+        <!-- Analyze Tab -->
+        <div id="analyze-tab" class="tab-content active">
             <form id="upload-form" enctype="multipart/form-data">
-                <div class="input-card">
-                    <div class="card-header">
-                        <span class="icon">📄</span>
-                        <h3>Your Resume</h3>
+                <div class="input-section">
+                    <!-- Resume Card -->
+                    <div class="input-card">
+                        <div class="card-header">
+                            <span class="icon">📄</span>
+                            <h3>Your Resume</h3>
+                        </div>
+                        <div class="file-upload-wrapper">
+                            <input type="file" id="resume-file" name="resume_file" accept=".pdf,.doc,.docx" style="display:none">
+                            <button type="button" class="upload-btn" onclick="document.getElementById('resume-file').click()">
+                                📎 Choose File
+                            </button>
+                            <span id="file-name" class="file-name">No file chosen</span>
+                            <button type="button" id="remove-file-btn" class="remove-btn hidden" onclick="removeFile()">✕ Remove</button>
+                        </div>
+                        <div class="divider"><span>OR</span></div>
+                        <textarea id="resume" name="resume_text" placeholder="Paste your resume content here...&#10;&#10;Include:&#10;• Work Experience&#10;• Skills&#10;• Education&#10;• Projects"></textarea>
                     </div>
-                    
-                    <div class="file-upload-wrapper">
-                        <input type="file" id="resume-file" name="resume_file" accept=".pdf,.doc,.docx" style="display: none;">
-                        <button type="button" class="upload-btn" onclick="document.getElementById('resume-file').click()">
-                            📎 Choose File
-                        </button>
-                        <span id="file-name" class="file-name">No file chosen</span>
-                        <button type="button" id="remove-file-btn" class="remove-btn hidden" onclick="removeFile()">
-                            ✕ Remove
-                        </button>
+
+                    <!-- Job Description Card -->
+                    <div class="input-card">
+                        <div class="card-header">
+                            <span class="icon">💼</span>
+                            <h3>Job Description</h3>
+                        </div>
+                        <textarea id="job-description" name="job_description" placeholder="Paste the job description here...&#10;&#10;Include:&#10;• Required Skills&#10;• Experience Level&#10;• Qualifications&#10;• Responsibilities"></textarea>
                     </div>
-                    
-                    <div class="divider">
-                        <span>OR</span>
-                    </div>
-                    
-                    <textarea id="resume" name="resume_text" placeholder="Paste your resume content here...&#10;&#10;Include:&#10;• Work Experience&#10;• Skills&#10;• Education&#10;• Projects"></textarea>
                 </div>
-                
-                <div class="input-card">
-                    <div class="card-header">
-                        <span class="icon">💼</span>
-                        <h3>Job Description</h3>
-                    </div>
-                    <textarea id="job-description" name="job_description" placeholder="Paste the job description here...&#10;&#10;Include:&#10;• Required Skills&#10;• Experience Level&#10;• Qualifications&#10;• Responsibilities"></textarea>
-                </div>
-                
+
                 <button type="button" id="analyze-btn" class="analyze-btn" onclick="analyzeMatch()">
                     <span class="btn-text">🔍 Analyze Match</span>
                     <span class="btn-loader hidden">⏳ Analyzing...</span>
                 </button>
             </form>
-        </div>
-        
-        <div id="results" class="results hidden">
-            <h2>📊 Analysis Results</h2>
-            
-            <!-- Speedometer Gauge -->
-            <div class="gauge-container">
-                <div class="gauge-title">ATS Match Score</div>
-                <div class="speedometer">
-                    <svg viewBox="0 0 200 200" class="gauge-svg">
-                        <defs>
-                            <linearGradient id="redGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" style="stop-color:#ff4444;stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:#ff6b6b;stop-opacity:1" />
-                            </linearGradient>
-                            <linearGradient id="yellowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" style="stop-color:#ffa500;stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:#ffc107;stop-opacity:1" />
-                            </linearGradient>
-                            <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" style="stop-color:#28a745;stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:#5cb85c;stop-opacity:1" />
-                            </linearGradient>
-                            <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" style="stop-color:#007bff;stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:#0056b3;stop-opacity:1" />
-                            </linearGradient>
-                            <filter id="shadow">
-                                <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
-                            </filter>
-                        </defs>
-                        
-                        <!-- Outer circle -->
-                        <circle cx="100" cy="100" r="90" fill="none" stroke="#f0f0f0" stroke-width="18"/>
-                        
-                        <!-- Colored arcs -->
-                        <circle cx="100" cy="100" r="90" fill="none" stroke="url(#redGrad)" stroke-width="18"
-                                stroke-dasharray="56.5 282.7" stroke-dashoffset="0" transform="rotate(135 100 100)" stroke-linecap="round"/>
-                        <circle cx="100" cy="100" r="90" fill="none" stroke="url(#yellowGrad)" stroke-width="18"
-                                stroke-dasharray="56.5 282.7" stroke-dashoffset="-56.5" transform="rotate(135 100 100)" stroke-linecap="round"/>
-                        <circle cx="100" cy="100" r="90" fill="none" stroke="url(#greenGrad)" stroke-width="18"
-                                stroke-dasharray="56.5 282.7" stroke-dashoffset="-113" transform="rotate(135 100 100)" stroke-linecap="round"/>
-                        <circle cx="100" cy="100" r="90" fill="none" stroke="url(#blueGrad)" stroke-width="18"
-                                stroke-dasharray="56.5 282.7" stroke-dashoffset="-169.5" transform="rotate(135 100 100)" stroke-linecap="round"/>
-                        
-                        <!-- Scale marks -->
-                        <g id="scale-marks">
-                            <line x1="100" y1="20" x2="100" y2="30" stroke="#999" stroke-width="2" transform="rotate(135 100 100)"/>
-                            <line x1="100" y1="20" x2="100" y2="30" stroke="#999" stroke-width="2" transform="rotate(180 100 100)"/>
-                            <line x1="100" y1="20" x2="100" y2="30" stroke="#999" stroke-width="2" transform="rotate(225 100 100)"/>
-                            <line x1="100" y1="20" x2="100" y2="30" stroke="#999" stroke-width="2" transform="rotate(270 100 100)"/>
-                            <line x1="100" y1="20" x2="100" y2="30" stroke="#999" stroke-width="2" transform="rotate(315 100 100)"/>
-                            <line x1="100" y1="20" x2="100" y2="30" stroke="#999" stroke-width="2" transform="rotate(360 100 100)"/>
-                            <line x1="100" y1="20" x2="100" y2="30" stroke="#999" stroke-width="2" transform="rotate(405 100 100)"/>
-                        </g>
-                        
-                        <!-- Scale numbers -->
-                        <text x="30" y="110" font-size="14" fill="#666" font-weight="bold">0</text>
-                        <text x="45" y="50" font-size="14" fill="#666" font-weight="bold">25</text>
-                        <text x="95" y="25" font-size="14" fill="#666" font-weight="bold">50</text>
-                        <text x="145" y="50" font-size="14" fill="#666" font-weight="bold">75</text>
-                        <text x="160" y="110" font-size="14" fill="#666" font-weight="bold">100</text>
-                        
-                        <!-- Needle -->
-                        <g id="needle-group" transform="rotate(135 100 100)">
-                            <polygon points="100,100 98,40 100,35 102,40" fill="#333" filter="url(#shadow)"/>
-                            <circle cx="100" cy="100" r="12" fill="#333"/>
-                            <circle cx="100" cy="100" r="8" fill="#fff"/>
-                            <circle cx="100" cy="100" r="4" fill="#333"/>
-                        </g>
-                    </svg>
-                    
-                    <div class="gauge-center">
-                        <div class="gauge-value">
-                            <span id="match-percentage" class="percentage-value">0</span>
-                            <span class="percentage-symbol">%</span>
+
+            <!-- Results Section -->
+            <div id="results" class="results hidden">
+                <h2>📊 Analysis Results</h2>
+
+                <!-- Gauge + Score Breakdown Row -->
+                <div class="top-row">
+                    <!-- Speedometer -->
+                    <div class="gauge-container">
+                        <div class="gauge-title">ATS Match Score</div>
+                        <div class="speedometer">
+                            <svg viewBox="0 0 200 200" class="gauge-svg">
+                                <defs>
+                                    <linearGradient id="redGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" style="stop-color:#ff4444;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#ff6b6b;stop-opacity:1" />
+                                    </linearGradient>
+                                    <linearGradient id="yellowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" style="stop-color:#ffa500;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#ffc107;stop-opacity:1" />
+                                    </linearGradient>
+                                    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" style="stop-color:#28a745;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#5cb85c;stop-opacity:1" />
+                                    </linearGradient>
+                                    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                                    </linearGradient>
+                                    <filter id="shadow">
+                                        <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+                                    </filter>
+                                </defs>
+                                <circle cx="100" cy="100" r="90" fill="none" stroke="#1e2a3d" stroke-width="18"/>
+                                <circle cx="100" cy="100" r="90" fill="none" stroke="url(#redGrad)" stroke-width="18"
+                                        stroke-dasharray="56.5 282.7" stroke-dashoffset="0" transform="rotate(135 100 100)" stroke-linecap="round"/>
+                                <circle cx="100" cy="100" r="90" fill="none" stroke="url(#yellowGrad)" stroke-width="18"
+                                        stroke-dasharray="56.5 282.7" stroke-dashoffset="-56.5" transform="rotate(135 100 100)" stroke-linecap="round"/>
+                                <circle cx="100" cy="100" r="90" fill="none" stroke="url(#greenGrad)" stroke-width="18"
+                                        stroke-dasharray="56.5 282.7" stroke-dashoffset="-113" transform="rotate(135 100 100)" stroke-linecap="round"/>
+                                <circle cx="100" cy="100" r="90" fill="none" stroke="url(#blueGrad)" stroke-width="18"
+                                        stroke-dasharray="56.5 282.7" stroke-dashoffset="-169.5" transform="rotate(135 100 100)" stroke-linecap="round"/>
+                                <g id="scale-marks">
+                                    <line x1="100" y1="20" x2="100" y2="30" stroke="#4a5568" stroke-width="2" transform="rotate(135 100 100)"/>
+                                    <line x1="100" y1="20" x2="100" y2="30" stroke="#4a5568" stroke-width="2" transform="rotate(180 100 100)"/>
+                                    <line x1="100" y1="20" x2="100" y2="30" stroke="#4a5568" stroke-width="2" transform="rotate(225 100 100)"/>
+                                    <line x1="100" y1="20" x2="100" y2="30" stroke="#4a5568" stroke-width="2" transform="rotate(270 100 100)"/>
+                                    <line x1="100" y1="20" x2="100" y2="30" stroke="#4a5568" stroke-width="2" transform="rotate(315 100 100)"/>
+                                    <line x1="100" y1="20" x2="100" y2="30" stroke="#4a5568" stroke-width="2" transform="rotate(360 100 100)"/>
+                                    <line x1="100" y1="20" x2="100" y2="30" stroke="#4a5568" stroke-width="2" transform="rotate(405 100 100)"/>
+                                </g>
+                                <text x="27" y="112" font-size="12" fill="#8892a4" font-weight="600">0</text>
+                                <text x="42" y="52" font-size="12" fill="#8892a4" font-weight="600">25</text>
+                                <text x="92" y="26" font-size="12" fill="#8892a4" font-weight="600">50</text>
+                                <text x="143" y="52" font-size="12" fill="#8892a4" font-weight="600">75</text>
+                                <text x="155" y="112" font-size="10" fill="#8892a4" font-weight="600">100</text>
+                                <g id="needle-group" transform="rotate(135 100 100)">
+                                    <polygon points="100,100 98,40 100,35 102,40" fill="#e2e8f0" filter="url(#shadow)"/>
+                                    <circle cx="100" cy="100" r="12" fill="#1a2332"/>
+                                    <circle cx="100" cy="100" r="8" fill="#667eea"/>
+                                    <circle cx="100" cy="100" r="4" fill="#e2e8f0"/>
+                                </g>
+                            </svg>
+                            <div class="gauge-center">
+                                <div class="gauge-value">
+                                    <span id="match-percentage" class="percentage-value">0</span>
+                                    <span class="percentage-symbol">%</span>
+                                </div>
+                                <div class="gauge-label" id="gauge-label">Analyzing...</div>
+                            </div>
                         </div>
-                        <div class="gauge-label" id="gauge-label">Analyzing...</div>
+                        <div class="gauge-legend">
+                            <div class="legend-item"><span class="legend-color" style="background:linear-gradient(90deg,#ff4444,#ff6b6b)"></span><span>0–40% Poor</span></div>
+                            <div class="legend-item"><span class="legend-color" style="background:linear-gradient(90deg,#ffa500,#ffc107)"></span><span>41–60% Fair</span></div>
+                            <div class="legend-item"><span class="legend-color" style="background:linear-gradient(90deg,#28a745,#5cb85c)"></span><span>61–80% Good</span></div>
+                            <div class="legend-item"><span class="legend-color" style="background:linear-gradient(90deg,#667eea,#764ba2)"></span><span>81–100% Excellent</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Score Breakdown -->
+                    <div class="breakdown-card">
+                        <h3>📈 Score Breakdown</h3>
+                        <div class="breakdown-list" id="breakdown-list"></div>
+                        <div class="formula-note">
+                            Score = 0.35×Semantic + 0.25×Skills + 0.20×Experience + 0.10×Education + 0.10×ATS
+                        </div>
                     </div>
                 </div>
-                
-                <div class="gauge-legend">
-                    <div class="legend-item">
-                        <span class="legend-color" style="background: linear-gradient(90deg, #ff4444, #ff6b6b);"></span>
-                        <span>0-40% Poor</span>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card stat-matched">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-value" id="matched-count">0</div>
+                        <div class="stat-label">Matched Skills</div>
                     </div>
-                    <div class="legend-item">
-                        <span class="legend-color" style="background: linear-gradient(90deg, #ffa500, #ffc107);"></span>
-                        <span>41-60% Fair</span>
+                    <div class="stat-card stat-missing">
+                        <div class="stat-icon">❌</div>
+                        <div class="stat-value" id="missing-count">0</div>
+                        <div class="stat-label">Missing Skills</div>
                     </div>
-                    <div class="legend-item">
-                        <span class="legend-color" style="background: linear-gradient(90deg, #28a745, #5cb85c);"></span>
-                        <span>61-80% Good</span>
+                    <div class="stat-card stat-total">
+                        <div class="stat-icon">📋</div>
+                        <div class="stat-value" id="total-count">0</div>
+                        <div class="stat-label">Total Required</div>
                     </div>
-                    <div class="legend-item">
-                        <span class="legend-color" style="background: linear-gradient(90deg, #007bff, #0056b3);"></span>
-                        <span>81-100% Excellent</span>
+                    <div class="stat-card stat-ats">
+                        <div class="stat-icon">🤖</div>
+                        <div class="stat-value" id="ats-score-val">0</div>
+                        <div class="stat-label">ATS Compliance</div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Stats Cards -->
-            <div class="stats-grid">
-                <div class="stat-card stat-matched">
-                    <div class="stat-icon">✅</div>
-                    <div class="stat-value" id="matched-count">0</div>
-                    <div class="stat-label">Matched Skills</div>
+
+                <!-- Skills Section -->
+                <div class="skills-section">
+                    <div class="skills-card matched-card">
+                        <h3>✅ Matched Skills</h3>
+                        <div id="matched-skills-list" class="skills-list"></div>
+                    </div>
+                    <div class="skills-card missing-card">
+                        <h3>❌ Missing Skills</h3>
+                        <div id="missing-skills-list" class="skills-list"></div>
+                    </div>
                 </div>
-                <div class="stat-card stat-missing">
-                    <div class="stat-icon">❌</div>
-                    <div class="stat-value" id="missing-count">0</div>
-                    <div class="stat-label">Missing Skills</div>
+
+                <!-- AI Feedback Section -->
+                <div class="ai-feedback-card" id="ai-feedback-section">
+                    <div class="ai-header">
+                        <span class="ai-icon">🤖</span>
+                        <h3>Gemini AI Feedback</h3>
+                        <span class="ai-badge" id="ai-status-badge">Loading...</span>
+                    </div>
+                    <div id="ai-feedback-content"></div>
                 </div>
-                <div class="stat-card stat-total">
-                    <div class="stat-icon">📋</div>
-                    <div class="stat-value" id="total-count">0</div>
-                    <div class="stat-label">Total Required</div>
+
+                <!-- Experience & ATS -->
+                <div class="meta-grid">
+                    <div class="meta-card" id="experience-card">
+                        <h4>💼 Experience</h4>
+                        <div id="experience-info"></div>
+                    </div>
+                    <div class="meta-card" id="ats-card">
+                        <h4>📋 ATS Issues</h4>
+                        <div id="ats-issues-list"></div>
+                    </div>
                 </div>
-            </div>
-            
-            <!-- Skills Section -->
-            <div class="skills-section">
-                <div class="skills-card matched-card">
-                    <h3>✅ Matched Skills</h3>
-                    <div id="matched-skills-list" class="skills-list"></div>
+
+                <!-- Recommendations -->
+                <div class="recommendations">
+                    <h3>💡 Recommendations</h3>
+                    <div id="recommendations-list"></div>
                 </div>
-                
-                <div class="skills-card missing-card">
-                    <h3>❌ Missing Skills</h3>
-                    <div id="missing-skills-list" class="skills-list"></div>
-                </div>
-            </div>
-            
-            <!-- Recommendations -->
-            <div class="recommendations">
-                <h3>💡 Recommendations</h3>
-                <div id="recommendations-list"></div>
             </div>
         </div>
-        
+
+        <!-- History Tab -->
+        <div id="history-tab" class="tab-content">
+            <div class="history-header">
+                <h2>📜 Analysis History</h2>
+                <button class="refresh-btn" onclick="loadHistory()">🔄 Refresh</button>
+            </div>
+            <div id="history-list"></div>
+        </div>
+
         <div id="error" class="error hidden"></div>
     </div>
 
     <script>
-        // File upload handling
+        // ── Tab Navigation ────────────────────────────────────────────────
+        function showTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+            if (tabId === 'history-tab') loadHistory();
+        }
+
+        // ── File Upload ───────────────────────────────────────────────────
         document.getElementById('resume-file').addEventListener('change', function(e) {
-            const fileName = e.target.files[0]?.name || 'No file chosen';
-            document.getElementById('file-name').textContent = fileName;
+            const name = e.target.files[0]?.name || 'No file chosen';
+            document.getElementById('file-name').textContent = name;
             document.getElementById('remove-file-btn').classList.toggle('hidden', !e.target.files[0]);
         });
-        
         function removeFile() {
             document.getElementById('resume-file').value = '';
             document.getElementById('file-name').textContent = 'No file chosen';
             document.getElementById('remove-file-btn').classList.add('hidden');
         }
-        
+
+        // ── Core Analyze ──────────────────────────────────────────────────
         async function analyzeMatch() {
-            const form = document.getElementById('upload-form');
-            const formData = new FormData(form);
-            const resumeFile = document.getElementById('resume-file').files[0];
-            const resumeText = document.getElementById('resume').value.trim();
-            const jobDescription = document.getElementById('job-description').value.trim();
-            
-            if (!resumeFile && !resumeText) {
-                showError('⚠️ Please upload a resume file or paste resume text');
-                return;
-            }
-            
-            if (!jobDescription) {
-                showError('⚠️ Please fill in the job description');
-                return;
-            }
-            
-            showLoading(true);
-            hideResults();
-            hideError();
-            
+            const formData = new FormData(document.getElementById('upload-form'));
+            const hasFile = document.getElementById('resume-file').files[0];
+            const hasText = document.getElementById('resume').value.trim();
+            const hasJob  = document.getElementById('job-description').value.trim();
+
+            if (!hasFile && !hasText) { showError('⚠️ Please upload a resume or paste resume text.'); return; }
+            if (!hasJob) { showError('⚠️ Please paste the job description.'); return; }
+
+            showLoading(true); hideResults(); hideError();
+
             try {
-                const response = await fetch('/analyze', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    displayResults(data);
-                } else {
-                    showError(data.error || 'An error occurred');
-                }
-            } catch (error) {
+                const res = await fetch('/analyze', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (res.ok) displayResults(data);
+                else showError(data.error || 'Analysis failed.');
+            } catch(e) {
                 showError('❌ Network error. Please try again.');
             } finally {
                 showLoading(false);
             }
         }
-        
+
+        // ── Display Results ───────────────────────────────────────────────
         function displayResults(data) {
-            const percentage = data.match_percentage;
-            
-            // Update gauge
-            updateGauge(percentage);
-            
-            // Update stats
-            document.getElementById('matched-count').textContent = data.matched_skills.length;
-            document.getElementById('missing-count').textContent = data.missing_skills.length;
-            document.getElementById('total-count').textContent = data.matched_skills.length + data.missing_skills.length;
-            
-            // Update skills lists
-            const matchedSkillsList = document.getElementById('matched-skills-list');
-            const missingSkillsList = document.getElementById('missing-skills-list');
-            
-            matchedSkillsList.innerHTML = data.matched_skills.length > 0 
-                ? data.matched_skills.map(skill => `<span class="skill matched">${skill}</span>`).join('')
+            const pct = data.match_percentage;
+            updateGauge(pct);
+
+            // Stats
+            document.getElementById('matched-count').textContent = data.skill_counts.matched;
+            document.getElementById('missing-count').textContent = data.skill_counts.missing;
+            document.getElementById('total-count').textContent = data.skill_counts.total_required;
+            document.getElementById('ats-score-val').textContent = data.ats_compliance?.score ?? 'N/A';
+
+            // Score breakdown bars
+            const bd = data.score_breakdown || {};
+            const breakdownItems = [
+                { label: 'Semantic Similarity', value: bd.semantic_similarity ?? 0, color: '#667eea', weight: '35%' },
+                { label: 'Skill Match Rate',    value: bd.skill_match_rate    ?? 0, color: '#28a745', weight: '25%' },
+                { label: 'ATS Compliance',      value: bd.ats_score           ?? 0, color: '#ffa500', weight: '10%' },
+            ];
+            document.getElementById('breakdown-list').innerHTML = breakdownItems.map(item => `
+                <div class="breakdown-item">
+                    <div class="breakdown-label">
+                        <span>${item.label}</span>
+                        <span class="bd-weight">${item.weight}</span>
+                        <span class="bd-value">${Math.round(item.value)}%</span>
+                    </div>
+                    <div class="breakdown-bar-bg">
+                        <div class="breakdown-bar-fill" style="width:${item.value}%;background:${item.color}"></div>
+                    </div>
+                </div>`).join('');
+
+            // Skills
+            const matchedList = document.getElementById('matched-skills-list');
+            const missingList = document.getElementById('missing-skills-list');
+            matchedList.innerHTML = data.matched_skills.length
+                ? data.matched_skills.map(s => `<span class="skill matched">${s}</span>`).join('')
                 : '<span class="no-skills">No matched skills found</span>';
-            
-            missingSkillsList.innerHTML = data.missing_skills.length > 0
-                ? data.missing_skills.map(skill => `<span class="skill missing">${skill}</span>`).join('')
-                : '<span class="no-skills">✨ Great! No missing skills</span>';
-            
-            // Generate recommendations
-            generateRecommendations(percentage, data.missing_skills);
-            
-            // Show results with animation
+
+            let missingHTML = '';
+            (data.missing_skills?.mandatory || []).forEach(s => {
+                missingHTML += `<span class="skill missing"><span class="skill-priority mandatory">REQUIRED</span> ${s}</span>`;
+            });
+            (data.missing_skills?.optional || []).forEach(s => {
+                missingHTML += `<span class="skill missing"><span class="skill-priority optional">OPTIONAL</span> ${s}</span>`;
+            });
+            missingList.innerHTML = missingHTML || '<span class="no-skills">✨ No missing skills found!</span>';
+
+            // AI Feedback
+            renderAIFeedback(data.ai_feedback);
+
+            // Experience
+            const exp = data.experience_match;
+            document.getElementById('experience-info').innerHTML = `
+                <p><strong>Your Experience:</strong> ${exp.resume_years} yrs (${exp.resume_level})</p>
+                <p><strong>Required:</strong> ${exp.required_years > 0 ? exp.required_years + ' yrs (' + exp.required_level + ')' : 'Not specified'}</p>
+                <p class="${exp.match ? 'match-ok' : 'match-fail'}">${exp.match ? '✅ Experience meets requirement' : '⚠️ Experience gap detected'}</p>`;
+
+            // ATS Issues
+            const issues = data.ats_compliance?.issues || [];
+            document.getElementById('ats-issues-list').innerHTML = issues.length
+                ? issues.map(i => `<div class="ats-issue">⚠️ ${i}</div>`).join('')
+                : '<div class="match-ok">✅ No ATS issues detected</div>';
+
+            // Recommendations
+            buildRecommendations(data);
+
+            // Show
             document.getElementById('results').classList.remove('hidden');
-            setTimeout(() => {
-                document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
+            setTimeout(() => document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
         }
-        
-        function updateGauge(percentage) {
-            const needleGroup = document.getElementById('needle-group');
-            const percentageEl = document.getElementById('match-percentage');
-            const labelEl = document.getElementById('gauge-label');
-            
-            // Calculate needle angle (135 to 405 degrees for 0-100%)
-            const angle = 135 + (percentage * 2.7);
-            needleGroup.setAttribute('transform', `rotate(${angle} 100 100)`);
-            
-            // Animate percentage
-            animateValue(percentageEl, 0, percentage, 1500);
-            
-            // Update label and color
-            let label, color;
-            if (percentage <= 40) {
-                label = '😟 Poor Match';
-                color = '#ff4444';
-            } else if (percentage <= 60) {
-                label = '😐 Fair Match';
-                color = '#ffa500';
-            } else if (percentage <= 80) {
-                label = '😊 Good Match';
-                color = '#28a745';
-            } else {
-                label = '🎉 Excellent Match';
-                color = '#007bff';
+
+        // ── AI Feedback Renderer ──────────────────────────────────────────
+        function renderAIFeedback(ai) {
+            const badge = document.getElementById('ai-status-badge');
+            const content = document.getElementById('ai-feedback-content');
+
+            if (!ai || !ai.available) {
+                badge.textContent = 'Unavailable';
+                badge.className = 'ai-badge ai-unavailable';
+                content.innerHTML = `<p class="ai-note">💡 ${ai?.message || 'Set GEMINI_API_KEY to enable AI feedback.'}</p>`;
+                return;
             }
-            
-            labelEl.textContent = label;
-            percentageEl.style.color = color;
+
+            badge.textContent = 'Powered by Gemini';
+            badge.className = 'ai-badge ai-active';
+
+            let html = '';
+            if (ai.overall_assessment) {
+                html += `<div class="ai-section"><h4>📋 Assessment</h4><p>${ai.overall_assessment}</p></div>`;
+            }
+            if (ai.suggestions?.length) {
+                html += `<div class="ai-section"><h4>🎯 Suggestions</h4><ul>${ai.suggestions.map(s => `<li>${s}</li>`).join('')}</ul></div>`;
+            }
+            if (ai.rewrite_example) {
+                html += `<div class="ai-section"><h4>✏️ Rewrite Example</h4><blockquote>${ai.rewrite_example}</blockquote></div>`;
+            }
+            if (ai.keyword_gaps?.length) {
+                html += `<div class="ai-section"><h4>🔑 Keyword Gaps</h4><div class="keyword-gaps">${ai.keyword_gaps.map(k => `<span class="skill missing">${k}</span>`).join('')}</div></div>`;
+            }
+            if (ai.phrasing_tips) {
+                html += `<div class="ai-section"><h4>💬 Phrasing Tip</h4><p class="phrasing-tip">${ai.phrasing_tips}</p></div>`;
+            }
+            content.innerHTML = html || '<p>No structured feedback available.</p>';
         }
-        
-        function animateValue(element, start, end, duration) {
-            const range = end - start;
-            const increment = range / (duration / 16);
-            let current = start;
-            
-            const timer = setInterval(() => {
-                current += increment;
-                if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
-                    current = end;
-                    clearInterval(timer);
-                }
-                element.textContent = Math.round(current);
+
+        // ── Recommendations Builder ───────────────────────────────────────
+        function buildRecommendations(data) {
+            const recList = document.getElementById('recommendations-list');
+            let recs = [];
+            const pct = data.match_percentage;
+
+            if (data.experience_match && !data.experience_match.match)
+                recs.push(`⚠️ Experience Gap: You have ${data.experience_match.resume_years} yrs but ${data.experience_match.required_years}+ required.`);
+
+            if (data.ats_compliance?.score < 80)
+                recs.push(`📝 ATS Score: ${data.ats_compliance.score}/100 — ${(data.ats_compliance.issues||[]).join('; ')}`);
+
+            if (pct >= 80) {
+                recs.push("🎯 Excellent match! You're a strong candidate — highlight matched skills prominently.");
+            } else if (pct >= 60) {
+                recs.push("👍 Good match! Focus on highlighting relevant experience and adding missing optional skills.");
+            } else if (pct >= 40) {
+                recs.push("⚠️ Fair match. Tailor your resume more closely to the job requirements.");
+            } else {
+                recs.push("❌ Low match. Consider building more relevant skills before applying.");
+            }
+
+            if (data.recommendations && Object.keys(data.recommendations).length) {
+                recs.push('<strong>📚 Learning Resources for Missing Skills:</strong>');
+                Object.entries(data.recommendations).slice(0, 5).forEach(([skill, rec]) => {
+                    recs.push(`<strong>${skill}:</strong> ${rec.courses[0]} | Project: ${rec.projects[0]}`);
+                });
+            }
+
+            const mand = data.missing_skills?.mandatory || [];
+            if (mand.length)
+                recs.push(`<strong>⚠️ Priority Skills to Add:</strong> ${mand.slice(0,5).join(', ')}`);
+
+            recList.innerHTML = recs.map(r => `<div class="recommendation-item">${r}</div>`).join('');
+        }
+
+        // ── Gauge ─────────────────────────────────────────────────────────
+        function updateGauge(pct) {
+            const angle = 135 + (pct * 2.7);
+            document.getElementById('needle-group').setAttribute('transform', `rotate(${angle} 100 100)`);
+            animateValue(document.getElementById('match-percentage'), 0, pct, 1500);
+
+            let label, color;
+            if (pct <= 40) { label = '😟 Poor Match';      color = '#ff4444'; }
+            else if (pct <= 60) { label = '😐 Fair Match';  color = '#ffa500'; }
+            else if (pct <= 80) { label = '😊 Good Match';  color = '#28a745'; }
+            else               { label = '🎉 Excellent!';   color = '#667eea'; }
+
+            document.getElementById('gauge-label').textContent = label;
+            document.getElementById('match-percentage').style.color = color;
+        }
+
+        function animateValue(el, start, end, duration) {
+            const range = end - start, step = range / (duration / 16);
+            let cur = start;
+            const t = setInterval(() => {
+                cur += step;
+                if ((step > 0 && cur >= end) || (step < 0 && cur <= end)) { cur = end; clearInterval(t); }
+                el.textContent = Math.round(cur);
             }, 16);
         }
-        
-        function generateRecommendations(percentage, missingSkills) {
-            const recList = document.getElementById('recommendations-list');
-            let recommendations = [];
-            
-            if (percentage >= 80) {
-                recommendations.push('🎯 Excellent match! You\'re a strong candidate for this position.');
-                recommendations.push('📝 Tailor your resume to highlight the matched skills prominently.');
-            } else if (percentage >= 60) {
-                recommendations.push('👍 Good match! Focus on highlighting your relevant experience.');
-                if (missingSkills.length > 0) {
-                    recommendations.push(`📚 Consider learning: ${missingSkills.slice(0, 3).join(', ')}`);
-                }
-            } else if (percentage >= 40) {
-                recommendations.push('⚠️ Fair match. You may need to develop more relevant skills.');
-                if (missingSkills.length > 0) {
-                    recommendations.push(`🎓 Priority skills to learn: ${missingSkills.slice(0, 3).join(', ')}`);
-                }
-            } else {
-                recommendations.push('❌ Low match. This position may not be the best fit currently.');
-                recommendations.push('💪 Focus on building foundational skills for this role.');
+
+        // ── History ───────────────────────────────────────────────────────
+        async function loadHistory() {
+            const list = document.getElementById('history-list');
+            list.innerHTML = '<div class="history-loading">⏳ Loading history...</div>';
+            try {
+                const res = await fetch('/history');
+                const data = await res.json();
+                if (!data.length) { list.innerHTML = '<div class="history-empty">No analyses yet. Run your first analysis!</div>'; return; }
+                list.innerHTML = data.map(r => `
+                    <div class="history-card">
+                        <div class="history-meta">
+                            <span class="history-time">🕐 ${new Date(r.timestamp).toLocaleString()}</span>
+                            <span class="history-score" style="color:${r.match_score >= 70 ? '#28a745' : r.match_score >= 50 ? '#ffa500' : '#ff4444'}">${Math.round(r.match_score)}%</span>
+                        </div>
+                        <div class="history-snippet">${r.resume_snippet.slice(0, 120)}...</div>
+                        <div class="history-tags">
+                            ${(r.matched_skills || []).slice(0,5).map(s => `<span class="skill matched">${s}</span>`).join('')}
+                        </div>
+                        <div class="history-ats">ATS Compliance: ${r.ats_score}/100</div>
+                    </div>`).join('');
+            } catch(e) {
+                list.innerHTML = '<div class="history-empty">❌ Failed to load history.</div>';
             }
-            
-            recList.innerHTML = recommendations.map(rec => `<div class="recommendation-item">${rec}</div>`).join('');
         }
-        
+
+        // ── Utilities ─────────────────────────────────────────────────────
         function showLoading(show) {
             const btn = document.getElementById('analyze-btn');
-            const btnText = btn.querySelector('.btn-text');
-            const btnLoader = btn.querySelector('.btn-loader');
-            
             btn.disabled = show;
-            btnText.classList.toggle('hidden', show);
-            btnLoader.classList.toggle('hidden', !show);
+            btn.querySelector('.btn-text').classList.toggle('hidden', show);
+            btn.querySelector('.btn-loader').classList.toggle('hidden', !show);
         }
-        
-        function hideResults() {
-            document.getElementById('results').classList.add('hidden');
+        function hideResults() { document.getElementById('results').classList.add('hidden'); }
+        function showError(msg) {
+            const e = document.getElementById('error');
+            e.innerHTML = msg; e.classList.remove('hidden');
+            setTimeout(() => hideError(), 6000);
         }
-        
-        function showError(message) {
-            const errorDiv = document.getElementById('error');
-            errorDiv.textContent = message;
-            errorDiv.classList.remove('hidden');
-            setTimeout(() => hideError(), 5000);
-        }
-        
-        function hideError() {
-            document.getElementById('error').classList.add('hidden');
-        }
+        function hideError() { document.getElementById('error').classList.add('hidden'); }
     </script>
 </body>
 </html>
