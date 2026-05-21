@@ -1,13 +1,13 @@
 Flask==2.3.3
+gunicorn==21.2.0
 numpy==1.24.3
 scikit-learn==1.2.2
 nltk==3.8.1
 PyPDF2==3.0.1
 python-docx==0.8.11
 sentence-transformers==2.2.2
-torch==2.0.1
 spacy==3.7.2
-reportlab==4.0.7
 python-dateutil==2.8.2
 pyyaml==6.0.1
-redis==5.0.1
+google-generativeai==0.5.4
+pdfminer.six==20221105
